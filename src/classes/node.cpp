@@ -8,11 +8,7 @@ Node::Node(
 }
 
 bool Node::broadcast_eth(){
-    WSADATA wsaData;
-    if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
-        Node::print("WSAStartup failed.");
-        return 1;
-    }
+    if (!Node::windowSetupSuccess()){return 1;}
 
     SOCKET sock = socket(AF_INET, SOCK_DGRAM, 0);
     if (sock == INVALID_SOCKET) {
@@ -20,12 +16,7 @@ bool Node::broadcast_eth(){
         return 1;
     }
 
-    // Enable broadcast
-    BOOL broadcast = TRUE;
-    if (setsockopt(sock, SOL_SOCKET, SO_BROADCAST, (char*)&broadcast, sizeof(broadcast)) < 0) {
-        Node::print("Failed to set broadcast option.");
-        return 1;
-    }
+    if (!Node::enableBroadcastSuccess(sock)){return 1;}
 
     sockaddr_in broadcastAddr{};
     broadcastAddr.sin_family = AF_INET;
@@ -45,11 +36,7 @@ bool Node::broadcast_eth(){
 }
 
 bool Node::listen_eth(){
-    WSADATA wsaData;
-    if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
-        Node::print("WSAStartup failed.");
-        return 1;
-    }
+    if (!Node::windowSetupSuccess()){return 1;}
 
     // AF_INET means IPV4
     // SOCK_DGRAM: DATAGRAM BASED (UDP) alternative is SOCK_STREAM (TCP)
@@ -61,11 +48,7 @@ bool Node::listen_eth(){
     recvAddr.sin_port = htons(BROADCAST_PORT);
     recvAddr.sin_addr.s_addr = INADDR_ANY;
 
-    BOOL optval = TRUE;
-    if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char*)&optval, sizeof(optval)) < 0) {
-        Node::print("Failed to set SO_REUSEADDR.");
-        return 1;
-    }
+    if(!Node::enableMultipleNodeBindToSamePortSuccess(sock)){return 1;}
 
 
     if (bind(sock, (sockaddr*)&recvAddr, sizeof(recvAddr)) < 0) {
@@ -94,6 +77,42 @@ bool Node::listen_eth(){
     return 0;
 }
 
+// UTILS
+// UTILS
+// UTILS
+
 void Node::print(const std::string& message){
     printMessage(name + ": " + message);
+}
+
+
+// CONFIGURATIONS
+// CONFIGURATIONS
+// CONFIGURATIONS
+
+bool Node::windowSetupSuccess(){
+    WSADATA wsaData;
+    if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
+        Node::print("WSAStartup failed.");
+        return false;
+    }
+    return true;
+}
+
+bool Node::enableMultipleNodeBindToSamePortSuccess(SOCKET sock){
+    BOOL optval = TRUE;
+    if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char*)&optval, sizeof(optval)) < 0) {
+        Node::print("Failed to set SO_REUSEADDR.");
+        return false;
+    }
+    return true;
+}
+
+bool Node::enableBroadcastSuccess(SOCKET sock){
+    BOOL broadcast = TRUE;
+    if (setsockopt(sock, SOL_SOCKET, SO_BROADCAST, (char*)&broadcast, sizeof(broadcast)) < 0) {
+        Node::print("Failed to set broadcast option.");
+        return false;
+    }
+    return true;
 }

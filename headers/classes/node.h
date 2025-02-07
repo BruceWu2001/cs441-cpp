@@ -15,4 +15,7 @@ public:
     bool broadcast_eth();
     bool listen_eth();
     void print(const std::string& message);
+    bool windowSetupSuccess();
+    bool enableBroadcastSuccess(SOCKET sock);
+    bool enableMultipleNodeBindToSamePortSuccess(SOCKET sock);
 };
